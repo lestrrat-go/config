@@ -109,6 +109,10 @@ func addPrefix(ctx context.Context, n string) string {
 var zeroval reflect.Value
 
 func convertValue(t reflect.Type, s string) (reflect.Value, error) {
+	if convertCustom(t) {
+		return convertCustomValue(t, s)
+	}
+
 	switch t.Kind() {
 	case reflect.String:
 		return reflect.ValueOf(s), nil
@@ -142,14 +146,24 @@ func convertValue(t reflect.Type, s string) (reflect.Value, error) {
 		rv := reflect.New(t).Elem()
 		rv.SetFloat(i)
 		return rv, nil
-	case reflect.Struct:
-		return convertStruct(t, s)
 	default:
 		return zeroval, errors.Errorf(`unknown type for conversion: %s`, t)
 	}
 }
 
-func convertStruct(t reflect.Type, s string) (reflect.Value, error) {
+// TODO: convertCustom and convertCustomValue should really be one method
+func convertCustom(t reflect.Type) bool {
+	if t.PkgPath() != "time" {
+		return false
+	}
+
+	if n := t.Name(); n != "Duration" && n != "Time" {
+		return false
+	}
+	return true
+}
+
+func convertCustomValue(t reflect.Type, s string) (reflect.Value, error) {
 	switch {
 	case t.PkgPath() == "time" && t.Name() == "Time":
 		v, err := time.Parse(time.RFC3339, s)
@@ -229,17 +243,6 @@ func decodeValue(ctx context.Context, rv reflect.Value, src Source) (assigned bo
 	})
 }
 
-func decodeSupported(t reflect.Type) bool {
-	if t.PkgPath() != "time" {
-		return false
-	}
-
-	if n := t.Name(); n != "Duration" && n != "Time" {
-		return false
-	}
-	return true
-}
-
 func decodeStructValue(ctx context.Context, rv reflect.Value, src Source) (assigned bool, err error) {
 	if pdebug.Enabled {
 		g := pdebug.Marker("decodeStructValue").BindError(&err)
@@ -263,34 +266,34 @@ func decodeStructValue(ctx context.Context, rv reflect.Value, src Source) (assig
 
 		ok, err := assignIfSuccessful(rv.Field(i), func(fv reflect.Value) (bool, error) {
 			n := addPrefix(ctx, getEnvName(sf))
-			// normally we just call decodeStructValue, but there are some exceptions
-			if sf.Type.Kind() == reflect.Struct && !decodeSupported(sf.Type) {
 
+			switch sft := sf.Type; {
+			case sft.Kind() == reflect.Struct && !convertCustom(fv.Type()):
 				// Lookee here! it's a struct. we first have to muck with the preix
 				ok, err := decodeStructValue(storePrefix(ctx, n), fv, src)
 				if err != nil {
 					return false, errors.Wrap(err, `failed to decode struct value`)
 				}
 				return ok, nil
-			}
+			default:
+				if pdebug.Enabled {
+					pdebug.Printf("Looking up environment variable '%s'", n)
+				}
+				v, ok := src.LookupEnv(n)
+				if !ok {
+					return false, nil
+				}
 
-			if pdebug.Enabled {
-				pdebug.Printf("Looking up environment variable '%s'", n)
+				converted, err := convertValue(fv.Type(), v)
+				if err != nil {
+					return false, errors.Wrap(err, `failed to convert value`)
+				}
+				if pdebug.Enabled {
+					pdebug.Printf("Conversion done, setting value")
+				}
+				fv.Set(converted)
+				return true, nil
 			}
-			v, ok := src.LookupEnv(n)
-			if !ok {
-				return false, nil
-			}
-
-			converted, err := convertValue(fv.Type(), v)
-			if err != nil {
-				return false, errors.Wrap(err, `failed to convert value`)
-			}
-			if pdebug.Enabled {
-				pdebug.Printf("Conversion done, setting value")
-			}
-			fv.Set(converted)
-			return true, nil
 		})
 		if err != nil {
 			return false, err
