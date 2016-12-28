@@ -31,6 +31,7 @@ The author initially attempted to use the library above, but there were a few th
 * uint, uint8, uint16, uint32, utin64
 * float32, float64
 * time.Time, time.Duration
+* slices of the above items
 * structs
 * pointer to above types
 * nested/embedded types

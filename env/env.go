@@ -146,6 +146,17 @@ func convertValue(t reflect.Type, s string) (reflect.Value, error) {
 		rv := reflect.New(t).Elem()
 		rv.SetFloat(i)
 		return rv, nil
+	case reflect.Slice:
+		elems := strings.Split(s, ",")
+		rv := reflect.MakeSlice(t, 0, len(elems))
+		for i, elem := range elems {
+			ev, err := convertValue(t.Elem(), elem)
+			if err != nil {
+				return zeroval, errors.Wrapf(err, `failed to convert slice element %d`, i)
+			}
+			rv = reflect.Append(rv, ev)
+		}
+		return rv, nil
 	default:
 		return zeroval, errors.Errorf(`unknown type for conversion: %s`, t)
 	}
@@ -267,33 +278,36 @@ func decodeStructValue(ctx context.Context, rv reflect.Value, src Source) (assig
 		ok, err := assignIfSuccessful(rv.Field(i), func(fv reflect.Value) (bool, error) {
 			n := addPrefix(ctx, getEnvName(sf))
 
-			switch sft := sf.Type; {
-			case sft.Kind() == reflect.Struct && !convertCustom(fv.Type()):
-				// Lookee here! it's a struct. we first have to muck with the preix
-				ok, err := decodeStructValue(storePrefix(ctx, n), fv, src)
-				if err != nil {
-					return false, errors.Wrap(err, `failed to decode struct value`)
+			if !convertCustom(fv.Type()) {
+				sft := sf.Type
+				switch sft.Kind() {
+				case reflect.Struct:
+					// Lookee here! it's a struct. we first have to muck with the preix
+					ok, err := decodeStructValue(storePrefix(ctx, n), fv, src)
+					if err != nil {
+						return false, errors.Wrap(err, `failed to decode struct value`)
+					}
+					return ok, nil
 				}
-				return ok, nil
-			default:
-				if pdebug.Enabled {
-					pdebug.Printf("Looking up environment variable '%s'", n)
-				}
-				v, ok := src.LookupEnv(n)
-				if !ok {
-					return false, nil
-				}
-
-				converted, err := convertValue(fv.Type(), v)
-				if err != nil {
-					return false, errors.Wrap(err, `failed to convert value`)
-				}
-				if pdebug.Enabled {
-					pdebug.Printf("Conversion done, setting value")
-				}
-				fv.Set(converted)
-				return true, nil
+				// default case, fallthrough
 			}
+			if pdebug.Enabled {
+				pdebug.Printf("Looking up environment variable '%s'", n)
+			}
+			v, ok := src.LookupEnv(n)
+			if !ok {
+				return false, nil
+			}
+
+			converted, err := convertValue(fv.Type(), v)
+			if err != nil {
+				return false, errors.Wrap(err, `failed to convert value`)
+			}
+			if pdebug.Enabled {
+				pdebug.Printf("Conversion done, setting value")
+			}
+			fv.Set(converted)
+			return true, nil
 		})
 		if err != nil {
 			return false, err

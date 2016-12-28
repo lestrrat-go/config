@@ -34,6 +34,8 @@ type Spec struct {
 	Time                  time.Time
 	Duration              time.Duration
 	SplitWord             string `split_words:"true"`
+	StringSlice           []string `split_words:"true"`
+	CustomSlice           []time.Duration `split_words:"true"`
 }
 
 type Embedded struct {
@@ -76,6 +78,8 @@ func TestDecode(t *testing.T) {
 	os.Setenv("MYAPP_TIME", now.Format(time.RFC3339))
 	os.Setenv("MYAPP_DURATION", "300ms")
 	os.Setenv("MYAPP_SPLIT_WORD", "split word")
+	os.Setenv("MYAPP_STRING_SLICE", "foo,bar,baz")
+	os.Setenv("MYAPP_CUSTOM_SLICE", "100ms,1s,1m")
 
 	if err := env.NewDecoder(env.System).Prefix("MYAPP").Decode(&s); !assert.NoError(t, err, "Decode should succeed") {
 		t.Logf("%s", err)
@@ -107,6 +111,8 @@ func TestDecode(t *testing.T) {
 		Time:                  now,
 		Duration:              300 * time.Millisecond,
 		SplitWord:             "split word",
+		StringSlice:           []string{"foo", "bar", "baz"},
+		CustomSlice:           []time.Duration{100 * time.Millisecond, time.Second, time.Minute},
 	}
 
 	if !assert.Equal(t, expected, s, "result should match") {
