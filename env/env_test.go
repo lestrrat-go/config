@@ -33,6 +33,7 @@ type Spec struct {
 	PointerUninitialized  *string
 	Time                  time.Time
 	Duration              time.Duration
+	SplitWord             string `split_words:"true"`
 }
 
 type Embedded struct {
@@ -74,6 +75,7 @@ func TestDecode(t *testing.T) {
 	os.Setenv("MYAPP_POINTER", "pointer")
 	os.Setenv("MYAPP_TIME", now.Format(time.RFC3339))
 	os.Setenv("MYAPP_DURATION", "300ms")
+	os.Setenv("MYAPP_SPLIT_WORD", "split word")
 
 	if err := env.NewDecoder(env.System).Prefix("MYAPP").Decode(&s); !assert.NoError(t, err, "Decode should succeed") {
 		t.Logf("%s", err)
@@ -103,10 +105,18 @@ func TestDecode(t *testing.T) {
 		NestedStruct:          Nested{Foo: "foo", Bar: 99},
 		Pointer:               &ptr,
 		Time:                  now,
-		Duration: 300 * time.Millisecond,
+		Duration:              300 * time.Millisecond,
+		SplitWord:             "split word",
 	}
 
 	if !assert.Equal(t, expected, s, "result should match") {
+		return
+	}
+}
+
+func TestDocodeNotPointer(t *testing.T) {
+	var c Spec
+	if !assert.Error(t, env.NewDecoder(env.System).Decode(c), "decoding non-pointer should fail") {
 		return
 	}
 }
