@@ -2,7 +2,6 @@ package env
 
 import (
 	"bytes"
-	"context"
 	"reflect"
 	"strconv"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"github.com/lestrrat/go-config/env/internal/structtag"
 	pdebug "github.com/lestrrat/go-pdebug"
 	"github.com/pkg/errors"
+	"golang.org/x/net/context"
 )
 
 func Unmarshal(v interface{}) error {
