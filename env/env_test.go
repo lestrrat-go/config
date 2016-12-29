@@ -2,13 +2,28 @@ package env_test
 
 import (
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/lestrrat/go-config/env"
 	envload "github.com/lestrrat/go-envload"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
+
+type Custom struct {
+	v int
+}
+
+func (c *Custom) UnmarshalEnv(s string) error {
+	v, err := strconv.ParseInt(s, 16, 64)
+	if err != nil {
+		return errors.Wrap(err, `failed to parse value for Custom type`)
+	}
+	c.v = int(v)
+	return nil
+}
 
 type Spec struct {
 	Embedded
@@ -33,9 +48,10 @@ type Spec struct {
 	PointerUninitialized  *string
 	Time                  time.Time
 	Duration              time.Duration
-	SplitWord             string `split_words:"true"`
-	StringSlice           []string `split_words:"true"`
+	SplitWord             string          `split_words:"true"`
+	StringSlice           []string        `split_words:"true"`
 	CustomSlice           []time.Duration `split_words:"true"`
+	CustomUnmarshal       Custom          `split_words:"true"`
 }
 
 type Embedded struct {
@@ -80,6 +96,7 @@ func TestDecode(t *testing.T) {
 	os.Setenv("MYAPP_SPLIT_WORD", "split word")
 	os.Setenv("MYAPP_STRING_SLICE", "foo,bar,baz")
 	os.Setenv("MYAPP_CUSTOM_SLICE", "100ms,1s,1m")
+	os.Setenv("MYAPP_CUSTOM_UNMARSHAL", "27")
 
 	if err := env.NewDecoder(env.System).Prefix("MYAPP").Decode(&s); !assert.NoError(t, err, "Decode should succeed") {
 		t.Logf("%s", err)
@@ -113,6 +130,7 @@ func TestDecode(t *testing.T) {
 		SplitWord:             "split word",
 		StringSlice:           []string{"foo", "bar", "baz"},
 		CustomSlice:           []time.Duration{100 * time.Millisecond, time.Second, time.Minute},
+		CustomUnmarshal:       Custom{v: 39},
 	}
 
 	if !assert.Equal(t, expected, s, "result should match") {

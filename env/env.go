@@ -163,7 +163,13 @@ func convertValue(t reflect.Type, s string) (reflect.Value, error) {
 }
 
 // TODO: convertCustom and convertCustomValue should really be one method
+var ifUnmarshal = reflect.TypeOf((*Unmarshaler)(nil)).Elem()
+
 func convertCustom(t reflect.Type) bool {
+	if t.Implements(ifUnmarshal) || reflect.PtrTo(t).Implements(ifUnmarshal) {
+		return true
+	}
+
 	if t.PkgPath() != "time" {
 		return false
 	}
@@ -176,6 +182,17 @@ func convertCustom(t reflect.Type) bool {
 
 func convertCustomValue(t reflect.Type, s string) (reflect.Value, error) {
 	switch {
+	case t.Implements(ifUnmarshal) || reflect.PtrTo(t).Implements(ifUnmarshal):
+		rv := reflect.New(t) // Note: ptr to T
+		rets := rv.MethodByName("UnmarshalEnv").Call([]reflect.Value{reflect.ValueOf(s)})
+		if len(rets) == 0 {
+			panic("did not get return value from calling UnmarshalEnv")
+		}
+
+		if !rets[0].IsNil() {
+			return zeroval, errors.Wrap(rets[0].Interface().(error), "error calling UnmarshalEnv")
+		}
+		return rv.Elem(), nil
 	case t.PkgPath() == "time" && t.Name() == "Time":
 		v, err := time.Parse(time.RFC3339, s)
 		if err != nil {

@@ -35,7 +35,9 @@ The author initially attempted to use the library above, but there were a few th
 * structs
 * pointer to above types
 * nested/embedded types
-* (TODO: unimplemented) types that implement Unmarshaler interface
+* types that implement env.Unmarshaler interface
+
+See [env_test.go](./env_test.go) for more examples
 
 ## DIFFERENCES FROM `envconfig`
 
