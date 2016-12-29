@@ -21,7 +21,9 @@ func LoadConfig(c *Config) error {
 
 This library can be thought of as a fork of [github.com/kelseyhightower/envconfig](https://github.com/kelseyhightower/envconfig). The code was written from scratch, but the goals are the same: We would like to support fetching configuration information from environment variables.
 
-The author initially attempted to use the library above, but there were a few things that needed changing to adapt to the author's needs. However, that would require modifying behavior for a relatively well established user base, and the author has been around long enough that while additions and bugfixes are easy to be included, behavior changes aren't :) So here is yet another library instead.
+The author initially attempted to use the library above, but there were a few things that needed changing to adapt to the author's needs. However, that would require modifying behavior of a code base that is being used by well established user base, and the author has been around long enough that it is quite hard to chanve existing behavior :)
+
+So here is yet another library, instead of spending days arguing if my change is good for the World or not. If the library above decides to support the differences that I describe below, this library *may* be deprecated/changed/whatever.
 
 ## Supported Types
 
@@ -63,12 +65,14 @@ os.Unsetenv("SUB_BAR")
 
 env.Unmarshal(&c)
 
-// If SubConfig is not populated, the struct pointed by
+// If SubConfig is _not_ populated, the struct pointed by
 // the c.Sub pointer is left as nil
 if c.Sub != nil {
     panic("c.Sub should be nil!")
 }
 ```
+
+The reason for this is to detect unitinialized fields.
 
 ### Flexible Source
 
