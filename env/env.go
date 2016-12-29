@@ -56,7 +56,7 @@ func getEnvName(t reflect.StructField) string {
 
 	// Look for env, or envconfig tags
 	for _, n := range []string{"env", "envconfig"} {
-		tag, ok := t.Tag.Lookup(n)
+		tag, ok := structtag.Lookup(t.Tag, n)
 		if !ok || len(tag) <= 0 {
 			continue
 		}
