@@ -1,14 +1,12 @@
 package env
 
 import (
-	"bytes"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
-	"unicode"
-	"unicode/utf8"
 
+	"github.com/fatih/camelcase"
 	"github.com/lestrrat/go-config/env/internal/structtag"
 	pdebug "github.com/lestrrat/go-pdebug"
 	"github.com/pkg/errors"
@@ -68,16 +66,7 @@ func getEnvName(t reflect.StructField) string {
 	// Now, this may need tweaking.
 	if ok, err := structtag.BoolValue(t.Tag, "split_words"); err == nil && ok {
 		// Convert `CamelCase` into `CAMEL_CASE`
-		var buf bytes.Buffer
-		for len(name) > 0 {
-			r, n := utf8.DecodeRuneInString(name)
-			if unicode.IsUpper(r) && buf.Len() > 0 {
-				buf.WriteRune('_')
-			}
-			buf.WriteRune(r)
-			name = name[n:]
-		}
-		name = buf.String()
+		name = strings.ToUpper(strings.Join(camelcase.Split(name), "_"))
 	}
 
 	return strings.ToUpper(name)
@@ -158,11 +147,11 @@ func convertValue(t reflect.Type, s string) (reflect.Value, error) {
 		}
 		return rv, nil
 	case reflect.Map:
-		elems:= strings.Split(s, ",")
+		elems := strings.Split(s, ",")
 		rv := reflect.MakeMap(t)
 		for _, elem := range elems {
 			i := strings.IndexByte(elem, '=')
-			if i < 1 || len(elem) -1 <= i{
+			if i < 1 || len(elem)-1 <= i {
 				return zeroval, errors.New(`invalid map element syntax`)
 			}
 			k, err := convertValue(t.Key(), elem[:i])

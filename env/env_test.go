@@ -53,6 +53,7 @@ type Spec struct {
 	CustomSlice           []time.Duration `split_words:"true"`
 	CustomUnmarshal       Custom          `split_words:"true"`
 	Map                   map[string]string
+	FOOCapitalized        string `split_words:"true"` // this should become FOO_CAPITALIZED
 }
 
 type Embedded struct {
@@ -99,6 +100,7 @@ func TestDecode(t *testing.T) {
 	os.Setenv("MYAPP_CUSTOM_SLICE", "100ms,1s,1m")
 	os.Setenv("MYAPP_CUSTOM_UNMARSHAL", "27")
 	os.Setenv("MYAPP_MAP", "foo=1,bar=2,baz=three")
+	os.Setenv("MYAPP_FOO_CAPITALIZED", "camelcase handled correctly")
 
 	if err := env.NewDecoder(env.System).Prefix("MYAPP").Decode(&s); !assert.NoError(t, err, "Decode should succeed") {
 		t.Logf("%s", err)
@@ -134,6 +136,7 @@ func TestDecode(t *testing.T) {
 		CustomSlice:           []time.Duration{100 * time.Millisecond, time.Second, time.Minute},
 		CustomUnmarshal:       Custom{v: 39},
 		Map:                   map[string]string{"foo": "1", "bar": "2", "baz": "three"},
+		FOOCapitalized:        "camelcase handled correctly",
 	}
 
 	if !assert.Equal(t, expected, s, "result should match") {
