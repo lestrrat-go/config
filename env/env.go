@@ -157,6 +157,25 @@ func convertValue(t reflect.Type, s string) (reflect.Value, error) {
 			rv = reflect.Append(rv, ev)
 		}
 		return rv, nil
+	case reflect.Map:
+		elems:= strings.Split(s, ",")
+		rv := reflect.MakeMap(t)
+		for _, elem := range elems {
+			i := strings.IndexByte(elem, '=')
+			if i < 1 || len(elem) -1 <= i{
+				return zeroval, errors.New(`invalid map element syntax`)
+			}
+			k, err := convertValue(t.Key(), elem[:i])
+			if err != nil {
+				return zeroval, errors.Wrap(err, `failed to convert map key`)
+			}
+			v, err := convertValue(t.Elem(), elem[i+1:])
+			if err != nil {
+				return zeroval, errors.Wrap(err, `failed to convert map value`)
+			}
+			rv.SetMapIndex(k, v)
+		}
+		return rv, nil
 	default:
 		return zeroval, errors.Errorf(`unknown type for conversion: %s`, t)
 	}

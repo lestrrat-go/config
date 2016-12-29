@@ -38,6 +38,7 @@ So here is yet another library, instead of spending days arguing if my change is
 * pointer to above types
 * nested/embedded types
 * types that implement env.Unmarshaler interface
+* maps
 
 See [env_test.go](./env_test.go) for more examples
 
