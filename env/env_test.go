@@ -44,6 +44,7 @@ type Spec struct {
 	ExplicitNameUpperCase string `env:"EXPLICIT_UPPER_CASE"`
 	Boolean               bool
 	NestedStruct          Nested
+	NestedStructPtr       *Nested
 	Pointer               *string
 	PointerUninitialized  *string
 	Time                  time.Time
@@ -92,6 +93,8 @@ func TestDecode(t *testing.T) {
 	os.Setenv("MYAPP_BOOLEAN", "true")
 	os.Setenv("MYAPP_NESTEDSTRUCT_FOO", "foo")
 	os.Setenv("MYAPP_NESTEDSTRUCT_BAR", "99")
+	os.Setenv("MYAPP_NESTEDSTRUCTPTR_FOO", "foo")
+	os.Setenv("MYAPP_NESTEDSTRUCTPTR_BAR", "99")
 	os.Setenv("MYAPP_POINTER", "pointer")
 	os.Setenv("MYAPP_TIME", now.Format(time.RFC3339))
 	os.Setenv("MYAPP_DURATION", "300ms")
@@ -128,6 +131,7 @@ func TestDecode(t *testing.T) {
 		ExplicitNameUpperCase: "struct tag explicitly specifies upper case",
 		Boolean:               true,
 		NestedStruct:          Nested{Foo: "foo", Bar: 99},
+		NestedStructPtr:       &Nested{Foo: "foo", Bar: 99},
 		Pointer:               &ptr,
 		Time:                  now,
 		Duration:              300 * time.Millisecond,

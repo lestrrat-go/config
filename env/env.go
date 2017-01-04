@@ -305,6 +305,10 @@ func decodeStructValue(ctx context.Context, rv reflect.Value, src Source) (assig
 
 			if !convertCustom(fv.Type()) {
 				sft := sf.Type
+				if sft.Kind() == reflect.Ptr || sft.Kind() == reflect.Interface {
+					sft = sft.Elem()
+				}
+
 				switch sft.Kind() {
 				case reflect.Struct:
 					// Lookee here! it's a struct. we first have to muck with the preix
