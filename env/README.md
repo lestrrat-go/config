@@ -73,7 +73,7 @@ if c.Sub != nil {
 }
 ```
 
-The reason for this is to detect unitinialized fields.
+The reason for this is to detect uninitialized fields.
 
 ### Flexible Source
 
