@@ -219,8 +219,14 @@ func convertCustomValue(t reflect.Type, s string) (reflect.Value, error) {
 }
 
 func assignIfSuccessful(rv reflect.Value, cb func(reflect.Value) (bool, error)) (assigned bool, err error) {
-	if rv.Kind() == reflect.Ptr || rv.Kind() == reflect.Interface {
-		// We have a pointer (or an interface). Does the thing point to anything?
+	if rv.Kind() == reflect.Interface {
+		// Since we can't expect an implementation for interface,
+		// nil sets to the value of a struct field even if environment variable is set.
+		return true, nil
+	}
+
+	if rv.Kind() == reflect.Ptr {
+		// We have a pointer. Does the thing point to anything?
 		if rv.Elem().IsValid() {
 			// Okay, the pointer does point to something. In this case, the
 			// caller has already explicitly initialized the value, so we
@@ -305,11 +311,21 @@ func decodeStructValue(ctx context.Context, rv reflect.Value, src Source) (assig
 
 			if !convertCustom(fv.Type()) {
 				sft := sf.Type
-				if sft.Kind() == reflect.Ptr || sft.Kind() == reflect.Interface {
+				if sft.Kind() == reflect.Interface {
+					// Here isn't executed in normal case.
+					return false, errors.New("interface is not decoded")
+				}
+
+				if sft.Kind() == reflect.Ptr {
 					sft = sft.Elem()
 				}
 
 				switch sft.Kind() {
+				case reflect.Interface:
+					// Since we can't expect an implementation for interface,
+					// pointer to nil interface sets to the value of a struct field
+					// even if environment variable is set.
+					return true, nil
 				case reflect.Struct:
 					// Lookee here! it's a struct. we first have to muck with the preix
 					ok, err := decodeStructValue(storePrefix(ctx, n), fv, src)
