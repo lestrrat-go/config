@@ -220,7 +220,9 @@ func convertCustomValue(t reflect.Type, s string) (reflect.Value, error) {
 
 func assignIfSuccessful(rv reflect.Value, cb func(reflect.Value) (bool, error)) (assigned bool, err error) {
 	if rv.Kind() == reflect.Interface {
-		return false, errors.New("interface is not assigned")
+		// Since we can't expect an implementation for interface,
+		// nil sets to the value of a struct field even if environment variable is set.
+		return true, nil
 	}
 
 	if rv.Kind() == reflect.Ptr {
@@ -310,6 +312,7 @@ func decodeStructValue(ctx context.Context, rv reflect.Value, src Source) (assig
 			if !convertCustom(fv.Type()) {
 				sft := sf.Type
 				if sft.Kind() == reflect.Interface {
+					// Here isn't executed in normal case.
 					return false, errors.New("interface is not decoded")
 				}
 
@@ -318,6 +321,11 @@ func decodeStructValue(ctx context.Context, rv reflect.Value, src Source) (assig
 				}
 
 				switch sft.Kind() {
+				case reflect.Interface:
+					// Since we can't expect an implementation for interface,
+					// pointer to nil interface sets to the value of a struct field
+					// even if environment variable is set.
+					return true, nil
 				case reflect.Struct:
 					// Lookee here! it's a struct. we first have to muck with the preix
 					ok, err := decodeStructValue(storePrefix(ctx, n), fv, src)
