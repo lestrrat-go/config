@@ -109,6 +109,10 @@ func TestDecode(t *testing.T) {
 	os.Setenv("MYAPP_MAP", "foo=1,bar=2,baz=three")
 	os.Setenv("MYAPP_FOO_CAPITALIZED", "camelcase handled correctly")
 
+	// environment variable for interface isn't used
+	os.Setenv("MYAPP_INTERFACE", "interface")
+	os.Setenv("MYAPP_INTERFACEPTR", "pointer to interface")
+
 	if err := env.NewDecoder(env.System).Prefix("MYAPP").Decode(&s); !assert.NoError(t, err, "Decode should succeed") {
 		t.Logf("%s", err)
 		return
@@ -116,6 +120,7 @@ func TestDecode(t *testing.T) {
 	t.Logf("%#v", s)
 
 	ptr := "pointer"
+	var intf Interface
 	var expected = Spec{
 		Embedded:              Embedded{Message: "Hello, Embedded!"},
 		SimpleString:          "foo",
@@ -145,6 +150,8 @@ func TestDecode(t *testing.T) {
 		CustomUnmarshal:       Custom{v: 39},
 		Map:                   map[string]string{"foo": "1", "bar": "2", "baz": "three"},
 		FOOCapitalized:        "camelcase handled correctly",
+		Interface:             nil,
+		InterfacePtr:          &intf,
 	}
 
 	if !assert.Equal(t, expected, s, "result should match") {
