@@ -25,6 +25,10 @@ func (c *Custom) UnmarshalEnv(s string) error {
 	return nil
 }
 
+type Interface interface {
+	Func(string) error
+}
+
 type Spec struct {
 	Embedded
 	SimpleString          string
@@ -55,6 +59,8 @@ type Spec struct {
 	CustomUnmarshal       Custom          `split_words:"true"`
 	Map                   map[string]string
 	FOOCapitalized        string `split_words:"true"` // this should become FOO_CAPITALIZED
+	Interface             Interface
+	InterfacePtr          *Interface
 }
 
 type Embedded struct {

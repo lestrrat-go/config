@@ -219,8 +219,8 @@ func convertCustomValue(t reflect.Type, s string) (reflect.Value, error) {
 }
 
 func assignIfSuccessful(rv reflect.Value, cb func(reflect.Value) (bool, error)) (assigned bool, err error) {
-	if rv.Kind() == reflect.Ptr || rv.Kind() == reflect.Interface {
-		// We have a pointer (or an interface). Does the thing point to anything?
+	if rv.Kind() == reflect.Ptr {
+		// We have a pointer. Does the thing point to anything?
 		if rv.Elem().IsValid() {
 			// Okay, the pointer does point to something. In this case, the
 			// caller has already explicitly initialized the value, so we
@@ -305,7 +305,7 @@ func decodeStructValue(ctx context.Context, rv reflect.Value, src Source) (assig
 
 			if !convertCustom(fv.Type()) {
 				sft := sf.Type
-				if sft.Kind() == reflect.Ptr || sft.Kind() == reflect.Interface {
+				if sft.Kind() == reflect.Ptr {
 					sft = sft.Elem()
 				}
 
