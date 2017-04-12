@@ -25,8 +25,6 @@ func (c *Custom) UnmarshalEnv(s string) error {
 	return nil
 }
 
-type Interface interface{}
-
 type Spec struct {
 	Embedded
 	SimpleString          string
@@ -57,8 +55,8 @@ type Spec struct {
 	CustomUnmarshal       Custom          `split_words:"true"`
 	Map                   map[string]string
 	FOOCapitalized        string `split_words:"true"` // this should become FOO_CAPITALIZED
-	Interface             Interface
-	InterfacePtr          *Interface
+	Interface             interface{}
+	InterfacePtr          *interface{}
 }
 
 type Embedded struct {
@@ -120,7 +118,7 @@ func TestDecode(t *testing.T) {
 	t.Logf("%#v", s)
 
 	ptr := "pointer"
-	var intf Interface
+	var intf interface{}
 	var expected = Spec{
 		Embedded:              Embedded{Message: "Hello, Embedded!"},
 		SimpleString:          "foo",
