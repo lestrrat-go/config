@@ -25,9 +25,7 @@ func (c *Custom) UnmarshalEnv(s string) error {
 	return nil
 }
 
-type Interface interface {
-	Func(string) error
-}
+type Interface interface{}
 
 type Spec struct {
 	Embedded
