@@ -219,6 +219,10 @@ func convertCustomValue(t reflect.Type, s string) (reflect.Value, error) {
 }
 
 func assignIfSuccessful(rv reflect.Value, cb func(reflect.Value) (bool, error)) (assigned bool, err error) {
+	if rv.Kind() == reflect.Interface {
+		return false, errors.New("interface is not assigned")
+	}
+
 	if rv.Kind() == reflect.Ptr {
 		// We have a pointer. Does the thing point to anything?
 		if rv.Elem().IsValid() {
@@ -305,6 +309,10 @@ func decodeStructValue(ctx context.Context, rv reflect.Value, src Source) (assig
 
 			if !convertCustom(fv.Type()) {
 				sft := sf.Type
+				if sft.Kind() == reflect.Interface {
+					return false, errors.New("interface is not decoded")
+				}
+
 				if sft.Kind() == reflect.Ptr {
 					sft = sft.Elem()
 				}
