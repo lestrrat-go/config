@@ -118,7 +118,6 @@ func TestDecode(t *testing.T) {
 	t.Logf("%#v", s)
 
 	ptr := "pointer"
-	var intf interface{}
 	var expected = Spec{
 		Embedded:              Embedded{Message: "Hello, Embedded!"},
 		SimpleString:          "foo",
@@ -149,7 +148,7 @@ func TestDecode(t *testing.T) {
 		Map:                   map[string]string{"foo": "1", "bar": "2", "baz": "three"},
 		FOOCapitalized:        "camelcase handled correctly",
 		Interface:             nil,
-		InterfacePtr:          &intf,
+		InterfacePtr:          nil,
 	}
 
 	if !assert.Equal(t, expected, s, "result should match") {
