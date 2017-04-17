@@ -218,11 +218,15 @@ func convertCustomValue(t reflect.Type, s string) (reflect.Value, error) {
 	}
 }
 
-func assignIfSuccessful(rv reflect.Value, cb func(reflect.Value) (bool, error)) (assigned bool, err error) {
+func assignIfSuccessful(rv reflect.Value, cb func(reflect.Value) (ret bool, err error)) (assigned bool, err error) {
+	if pdebug.Enabled {
+		g := pdebug.Marker("assignIfSuccessful").BindError(&err)
+		defer g.End()
+	}
 	if rv.Kind() == reflect.Interface {
 		// Since we can't expect an implementation for interface,
 		// nil sets to the value of a struct field even if environment variable is set.
-		return true, nil
+		return false, nil
 	}
 
 	if rv.Kind() == reflect.Ptr {
@@ -251,13 +255,23 @@ func assignIfSuccessful(rv reflect.Value, cb func(reflect.Value) (bool, error)) 
 			defer func() {
 				if err != nil {
 					// if there was an error, there's nothing to do.
+					if pdebug.Enabled {
+						pdebug.Printf("Error in callback: %s", err)
+					}
 					return
 				}
 
 				// if this was not an error, we need to check if any value
 				// has been assigned to rv.
 				if !assigned {
+					if pdebug.Enabled {
+						pdebug.Printf("Assigned is false")
+					}
 					return
+				}
+
+				if pdebug.Enabled {
+					pdebug.Printf("Setting value to result")
 				}
 
 				// Now that we know the value is valid, we assign
@@ -275,7 +289,12 @@ func decodeValue(ctx context.Context, rv reflect.Value, src Source) (assigned bo
 		defer g.End()
 	}
 
-	return assignIfSuccessful(rv, func(rv reflect.Value) (bool, error) {
+	return assignIfSuccessful(rv, func(rv reflect.Value) (ret bool, err error) {
+		if pdebug.Enabled {
+			g := pdebug.Marker("deodeValue callback").BindError(&err)
+			defer g.End()
+		}
+
 		switch rv.Kind() {
 		case reflect.Struct:
 			return decodeStructValue(ctx, rv, src)
@@ -317,6 +336,9 @@ func decodeStructValue(ctx context.Context, rv reflect.Value, src Source) (assig
 				}
 
 				if sft.Kind() == reflect.Ptr {
+					if pdebug.Enabled {
+						pdebug.Printf("this is a pointer")
+					}
 					sft = sft.Elem()
 				}
 
@@ -325,7 +347,7 @@ func decodeStructValue(ctx context.Context, rv reflect.Value, src Source) (assig
 					// Since we can't expect an implementation for interface,
 					// pointer to nil interface sets to the value of a struct field
 					// even if environment variable is set.
-					return true, nil
+					return false, nil
 				case reflect.Struct:
 					// Lookee here! it's a struct. we first have to muck with the preix
 					ok, err := decodeStructValue(storePrefix(ctx, n), fv, src)
@@ -341,6 +363,9 @@ func decodeStructValue(ctx context.Context, rv reflect.Value, src Source) (assig
 			}
 			v, ok := src.LookupEnv(n)
 			if !ok {
+				if pdebug.Enabled {
+					pdebug.Printf("Environment variable '%s' not found", n)
+				}
 				return false, nil
 			}
 
@@ -358,6 +383,9 @@ func decodeStructValue(ctx context.Context, rv reflect.Value, src Source) (assig
 			return false, err
 		}
 		if ok {
+			if pdebug.Enabled {
+				pdebug.Printf("Assgned = true for field '%s'", sf.Name)
+			}
 			assigned = true
 		}
 	}
