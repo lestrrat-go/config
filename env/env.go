@@ -295,6 +295,10 @@ func decodeValue(ctx context.Context, rv reflect.Value, src Source) (assigned bo
 			defer g.End()
 		}
 
+		if rv.Kind() == reflect.Ptr {
+			rv = rv.Elem()
+		}
+
 		switch rv.Kind() {
 		case reflect.Struct:
 			return decodeStructValue(ctx, rv, src)
