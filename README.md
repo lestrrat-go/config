@@ -1,4 +1,4 @@
-# go-config
+# config
 
 Libraries to aid configuration for golang applications
 
@@ -6,4 +6,4 @@ Libraries to aid configuration for golang applications
 
 | Name | Location  |
 |:-----|:----------|
-| env  | [github.com/lestrrat/go-config/env](https://github.com/lestrrat/go-config/tree/master/env) |
+| env  | [github.com/lestrrat-go/config/env](./env) |

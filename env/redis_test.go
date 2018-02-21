@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/go-redis/redis"
-	"github.com/lestrrat/go-config/env"
-	envload "github.com/lestrrat/go-envload"
+	"github.com/lestrrat-go/config/env"
+	envload "github.com/lestrrat-go/envload"
 	"github.com/stretchr/testify/assert"
 )
 

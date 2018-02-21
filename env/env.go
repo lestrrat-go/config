@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/fatih/camelcase"
-	"github.com/lestrrat/go-config/env/internal/structtag"
-	pdebug "github.com/lestrrat/go-pdebug"
+	"github.com/lestrrat-go/config/env/internal/structtag"
+	pdebug "github.com/lestrrat-go/pdebug"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
 )
